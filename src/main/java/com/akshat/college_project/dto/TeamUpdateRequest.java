@@ -1,0 +1,10 @@
+package com.akshat.college_project.dto;
+
+import java.util.List;
+
+public record TeamUpdateRequest(
+        String projectId,
+        List<String> teamMemberIds,
+        Boolean teamCompleteStatus
+) {
+}
