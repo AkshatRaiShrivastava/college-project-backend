@@ -4,7 +4,7 @@ This document explains how to use the backend APIs from Postman and frontend app
 
 ## 1) Base Setup
 
-- Base URL: `http://localhost:8080`
+- Base URL: `https://college-project-backend-r7f9.onrender.com`
 - Content type: `application/json`
 - Auth: currently **no authentication middleware is enabled**
 
@@ -17,7 +17,7 @@ Content-Type: application/json
 ## 2) Postman Setup
 
 1. Create a Postman environment.
-2. Add variable `baseUrl = http://localhost:8080`.
+2. Add variable `baseUrl = https://college-project-backend-r7f9.onrender.com`.
 3. For every request, use URL format: `{{baseUrl}}/api/...`.
 4. Use `Body -> raw -> JSON` for POST/PUT/PATCH.
 
