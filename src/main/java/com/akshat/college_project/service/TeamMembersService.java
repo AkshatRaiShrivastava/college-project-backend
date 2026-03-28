@@ -57,8 +57,14 @@ public class TeamMembersService {
             }
         }
 
+        if (request.rejectedMemberIds() != null) {
+            for (String memberId : request.rejectedMemberIds()) {
+                referenceValidator.requireStudent(memberId);
+            }
+        }
+
         TeamMembers teamMembers = teamMembersRepository.findById(teamId)
-                .orElseGet(() -> new TeamMembers(teamId, "[]", "[]"));
+                .orElseGet(() -> new TeamMembers(teamId, "[]", "[]", "[]"));
 
         if (request.joinMemberIds() != null) {
             String joinedJson = jsonArrayCodec.toJson(request.joinMemberIds());
@@ -69,6 +75,10 @@ public class TeamMembersService {
 
         if (request.notJoinMemberIds() != null) {
             teamMembers.setNotJoinMemberArray(jsonArrayCodec.toJson(request.notJoinMemberIds()));
+        }
+
+        if (request.rejectedMemberIds() != null) {
+            teamMembers.setRejectedMemberArray(jsonArrayCodec.toJson(request.rejectedMemberIds()));
         }
 
         teamRepository.save(team);

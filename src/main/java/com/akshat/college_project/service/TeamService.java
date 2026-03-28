@@ -57,8 +57,16 @@ public class TeamService {
 
         TeamMembers teamMembers = new TeamMembers();
         teamMembers.setTeamId(saved.getTeamId());
-        teamMembers.setJoinMemberArray(saved.getTeamMemberArray());
-        teamMembers.setNotJoinMemberArray("[]");
+        
+        List<String> joined = new ArrayList<>();
+        joined.add(request.leaderId());
+        teamMembers.setJoinMemberArray(jsonArrayCodec.toJson(joined));
+        
+        List<String> pending = new ArrayList<>(memberIds);
+        pending.remove(request.leaderId());
+        teamMembers.setNotJoinMemberArray(jsonArrayCodec.toJson(pending));
+        
+        teamMembers.setRejectedMemberArray("[]");
         teamMembersRepository.save(teamMembers);
 
         return saved;
@@ -89,7 +97,7 @@ public class TeamService {
             team.setTeamLength(memberIds.size());
 
             TeamMembers teamMembers = teamMembersRepository.findById(teamId)
-                    .orElseGet(() -> new TeamMembers(teamId, "[]", "[]"));
+                    .orElseGet(() -> new TeamMembers(teamId, "[]", "[]", "[]"));
             teamMembers.setJoinMemberArray(team.getTeamMemberArray());
             teamMembersRepository.save(teamMembers);
         }

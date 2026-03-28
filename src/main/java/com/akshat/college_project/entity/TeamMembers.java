@@ -29,4 +29,8 @@ public class TeamMembers {
     @Column(name = "not_join_member_array", nullable = false, columnDefinition = "jsonb")
     @ColumnTransformer(write = "CAST(? AS jsonb)")
     private String notJoinMemberArray;
+
+    @Column(name = "rejected_member_array", columnDefinition = "jsonb")
+    @ColumnTransformer(write = "CAST(? AS jsonb)")
+    private String rejectedMemberArray = "[]";
 }
