@@ -6,8 +6,10 @@ import com.akshat.college_project.common.ResourceNotFoundException;
 import com.akshat.college_project.dto.SupervisorCreateRequest;
 import com.akshat.college_project.dto.SupervisorUpdateRequest;
 import com.akshat.college_project.entity.Supervisor;
+import com.akshat.college_project.entity.enums.AccountType;
 import com.akshat.college_project.repository.SupervisorRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,23 +17,31 @@ import java.util.List;
 public class SupervisorService {
 
     private final SupervisorRepository supervisorRepository;
+    private final OtpService otpService;
 
-    public SupervisorService(SupervisorRepository supervisorRepository) {
+    public SupervisorService(SupervisorRepository supervisorRepository, OtpService otpService) {
         this.supervisorRepository = supervisorRepository;
+        this.otpService = otpService;
     }
 
+    @Transactional
     public Supervisor create(SupervisorCreateRequest request) {
-        if (supervisorRepository.existsByMail(request.mail())) {
+        String normalizedMail = normalizeEmail(request.mail());
+
+        if (supervisorRepository.existsByMailIgnoreCase(normalizedMail)) {
             throw new BadRequestException("Supervisor mail already exists");
         }
+
+        otpService.consumeOtpForAccountCreation(normalizedMail, request.otpCode(), AccountType.SUPERVISOR);
 
         Supervisor supervisor = new Supervisor();
         supervisor.setSupervisorId(IdGenerator.generate("sup_"));
         supervisor.setName(request.name());
-        supervisor.setMail(request.mail());
+        supervisor.setMail(normalizedMail);
         supervisor.setPassword(request.password());
         supervisor.setBranch(request.branch());
         supervisor.setEnrollStatus(request.enrollStatus());
+        supervisor.setOtpVerified(Boolean.TRUE);
         return supervisorRepository.save(supervisor);
     }
 
@@ -46,17 +56,18 @@ public class SupervisorService {
 
     public Supervisor update(String supervisorId, SupervisorUpdateRequest request) {
         Supervisor supervisor = get(supervisorId);
+        String updatedMail = request.mail() == null ? null : normalizeEmail(request.mail());
 
-        if (request.mail() != null && !request.mail().equalsIgnoreCase(supervisor.getMail())
-                && supervisorRepository.existsByMail(request.mail())) {
+        if (updatedMail != null && !updatedMail.equalsIgnoreCase(supervisor.getMail())
+                && supervisorRepository.existsByMailIgnoreCase(updatedMail)) {
             throw new BadRequestException("Supervisor mail already exists");
         }
 
         if (request.name() != null) {
             supervisor.setName(request.name());
         }
-        if (request.mail() != null) {
-            supervisor.setMail(request.mail());
+        if (updatedMail != null) {
+            supervisor.setMail(updatedMail);
         }
         if (request.password() != null) {
             supervisor.setPassword(request.password());
@@ -74,5 +85,12 @@ public class SupervisorService {
     public void delete(String supervisorId) {
         Supervisor supervisor = get(supervisorId);
         supervisorRepository.delete(supervisor);
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null || email.trim().isBlank()) {
+            throw new BadRequestException("Supervisor mail is required");
+        }
+        return email.trim().toLowerCase();
     }
 }

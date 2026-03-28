@@ -54,6 +54,9 @@ public class Student {
     @Column(name = "batch", nullable = false, length = 10)
     private String batch;
 
+    @Column(name = "otp_verified", nullable = false, columnDefinition = "boolean default false")
+    private Boolean otpVerified;
+
     @Column(name = "create_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -63,6 +66,9 @@ public class Student {
 
     @PrePersist
     public void prePersist() {
+        if (otpVerified == null) {
+            otpVerified = Boolean.FALSE;
+        }
         if (createdAt == null) {
             createdAt = Instant.now();
         }

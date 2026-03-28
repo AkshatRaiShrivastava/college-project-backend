@@ -6,8 +6,10 @@ import com.akshat.college_project.common.ResourceNotFoundException;
 import com.akshat.college_project.dto.AdminCreateRequest;
 import com.akshat.college_project.dto.AdminUpdateRequest;
 import com.akshat.college_project.entity.Admin;
+import com.akshat.college_project.entity.enums.AccountType;
 import com.akshat.college_project.repository.AdminRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,22 +17,30 @@ import java.util.List;
 public class AdminService {
 
     private final AdminRepository adminRepository;
+    private final OtpService otpService;
 
-    public AdminService(AdminRepository adminRepository) {
+    public AdminService(AdminRepository adminRepository, OtpService otpService) {
         this.adminRepository = adminRepository;
+        this.otpService = otpService;
     }
 
+    @Transactional
     public Admin create(AdminCreateRequest request) {
-        if (adminRepository.existsByMail(request.mail())) {
+        String normalizedMail = normalizeEmail(request.mail());
+
+        if (adminRepository.existsByMailIgnoreCase(normalizedMail)) {
             throw new BadRequestException("Admin mail already exists");
         }
+
+        otpService.consumeOtpForAccountCreation(normalizedMail, request.otpCode(), AccountType.ADMIN);
 
         Admin admin = new Admin();
         admin.setAdminId(IdGenerator.generate("adm_"));
         admin.setName(request.name());
-        admin.setMail(request.mail());
+        admin.setMail(normalizedMail);
         admin.setPassword(request.password());
         admin.setDepartment(request.department());
+        admin.setOtpVerified(Boolean.TRUE);
         return adminRepository.save(admin);
     }
 
@@ -45,17 +55,18 @@ public class AdminService {
 
     public Admin update(String adminId, AdminUpdateRequest request) {
         Admin admin = get(adminId);
+        String updatedMail = request.mail() == null ? null : normalizeEmail(request.mail());
 
-        if (request.mail() != null && !request.mail().equalsIgnoreCase(admin.getMail())
-                && adminRepository.existsByMail(request.mail())) {
+        if (updatedMail != null && !updatedMail.equalsIgnoreCase(admin.getMail())
+                && adminRepository.existsByMailIgnoreCase(updatedMail)) {
             throw new BadRequestException("Admin mail already exists");
         }
 
         if (request.name() != null) {
             admin.setName(request.name());
         }
-        if (request.mail() != null) {
-            admin.setMail(request.mail());
+        if (updatedMail != null) {
+            admin.setMail(updatedMail);
         }
         if (request.password() != null) {
             admin.setPassword(request.password());
@@ -70,5 +81,12 @@ public class AdminService {
     public void delete(String adminId) {
         Admin admin = get(adminId);
         adminRepository.delete(admin);
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null || email.trim().isBlank()) {
+            throw new BadRequestException("Admin mail is required");
+        }
+        return email.trim().toLowerCase();
     }
 }

@@ -8,6 +8,7 @@ public record AdminCreateRequest(
         @NotBlank @Size(max = 100) String name,
         @NotBlank @Email @Size(max = 150) String mail,
         @NotBlank @Size(max = 255) String password,
-        @NotBlank @Size(max = 50) String department
+        @NotBlank @Size(max = 50) String department,
+        @NotBlank @Size(max = 10) String otpCode
 ) {
 }

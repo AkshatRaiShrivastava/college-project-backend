@@ -10,6 +10,7 @@ public record SupervisorCreateRequest(
         @NotBlank @Email @Size(max = 150) String mail,
         @NotBlank @Size(max = 255) String password,
         @NotBlank @Size(max = 50) String branch,
+        @NotBlank @Size(max = 10) String otpCode,
         SupervisorEnrollStatus enrollStatus
 ) {
 }

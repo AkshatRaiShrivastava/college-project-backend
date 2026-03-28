@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SupervisorRepository extends JpaRepository<Supervisor, String> {
 
     boolean existsByMail(String mail);
+    boolean existsByMailIgnoreCase(String mail);
 }

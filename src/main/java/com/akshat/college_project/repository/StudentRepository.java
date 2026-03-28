@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface StudentRepository extends JpaRepository<Student, String> {
 
     boolean existsByMail(String mail);
+    boolean existsByMailIgnoreCase(String mail);
 
     boolean existsByRollNo(String rollNo);
 }

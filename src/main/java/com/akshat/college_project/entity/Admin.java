@@ -44,11 +44,17 @@ public class Admin {
     @Column(name = "department", nullable = false, length = 50)
     private String department;
 
+    @Column(name = "otp_verified", nullable = false, columnDefinition = "boolean default false")
+    private Boolean otpVerified;
+
     @Column(name = "create_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @PrePersist
     public void prePersist() {
+        if (otpVerified == null) {
+            otpVerified = Boolean.FALSE;
+        }
         if (createdAt == null) {
             createdAt = Instant.now();
         }

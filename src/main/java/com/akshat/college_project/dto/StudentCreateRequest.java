@@ -12,6 +12,7 @@ public record StudentCreateRequest(
         @NotBlank @Size(max = 20) String rollNo,
         @NotBlank @Size(max = 50) String branch,
         @NotBlank @Size(max = 10) String batch,
+        @NotBlank @Size(max = 10) String otpCode,
         StudentEnrollStatus enrollStatus
 ) {
 }
