@@ -5,39 +5,37 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class OneDriveStorageService {
 
     private final WebClient webClient;
 
-    @Value("${azure.client.id}")
+    @Value("${azure.client.id:}")
     private String clientId;
 
-    @Value("${azure.client.secret}")
+    @Value("${azure.client.secret:}")
     private String clientSecret;
 
-    @Value("${azure.tenant.id}")
+    @Value("${azure.tenant.id:}")
     private String tenantId;
 
-    @Value("${azure.graph.token-url}")
+    @Value("${azure.graph.token-url:}")
     private String tokenUrl;
 
-    @Value("${azure.graph.scope}")
+    @Value("${azure.graph.scope:}")
     private String scope;
 
-    @Value("${onedrive.drive.id}")
+    @Value("${onedrive.drive.id:}")
     private String driveId;
 
-    @Value("${onedrive.root.folder}")
+    @Value("${onedrive.root.folder:}")
     private String rootFolder;
 
     // Token caching
@@ -49,15 +47,11 @@ public class OneDriveStorageService {
     }
 
     private synchronized String getAccessToken() {
+        validateConfiguration();
+
         if (cachedToken != null && System.currentTimeMillis() < tokenExpiryTime) {
             return cachedToken;
         }
-
-        Map<String, String> formData = new ConcurrentHashMap<>();
-        formData.put("client_id", clientId);
-        formData.put("scope", scope);
-        formData.put("client_secret", clientSecret);
-        formData.put("grant_type", "client_credentials");
 
         TokenResponse response = webClient.post()
                 .uri(tokenUrl)
@@ -110,6 +104,18 @@ public class OneDriveStorageService {
             return response.webUrl;
         }
         throw new RuntimeException("Failed to upload file to OneDrive");
+    }
+
+    private void validateConfiguration() {
+        if (!StringUtils.hasText(clientId)
+                || !StringUtils.hasText(clientSecret)
+                || !StringUtils.hasText(tenantId)
+                || !StringUtils.hasText(tokenUrl)
+                || !StringUtils.hasText(scope)
+                || !StringUtils.hasText(driveId)
+                || !StringUtils.hasText(rootFolder)) {
+            throw new IllegalStateException("OneDrive configuration is incomplete. Set Azure/OneDrive environment variables.");
+        }
     }
 
     // DTOs for Graph API Mapping
