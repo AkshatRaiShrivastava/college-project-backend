@@ -36,9 +36,11 @@ public class FinalSubmissionService {
         referenceValidator.requireDocument(request.documentId());
 
         FinalSubmission submission = new FinalSubmission();
-        submission.setFinalId(IdGenerator.generate("fin_"));
+        submission.setFinalId(IdGenerator.generate("fnl_"));
         submission.setDocumentId(request.documentId());
         submission.setComment(request.comment());
+        submission.setFileUrl(request.fileUrl());
+        submission.setFileName(request.fileName());
 
         FinalSubmission saved = repository.save(submission);
         documentService.appendSubmissionId(saved.getDocumentId(), StageStatus.FINAL, saved.getFinalId());

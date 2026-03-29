@@ -15,6 +15,11 @@ public class CollegeProjectApplication {
     }
 
     @Bean
+    public org.springframework.web.reactive.function.client.WebClient.Builder webClientBuilder() {
+        return org.springframework.web.reactive.function.client.WebClient.builder();
+    }
+
+    @Bean
     public CommandLineRunner schemaFix(JdbcTemplate jdbcTemplate) {
         return args -> {
             try {

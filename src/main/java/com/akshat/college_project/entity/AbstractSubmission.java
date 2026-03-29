@@ -26,6 +26,12 @@ public abstract class AbstractSubmission {
     @Column(name = "comment", columnDefinition = "text")
     private String comment;
 
+    @Column(name = "file_url", length = 1000)
+    private String fileUrl;
+
+    @Column(name = "file_name", length = 255)
+    private String fileName;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)
     private SubmissionStatus status;

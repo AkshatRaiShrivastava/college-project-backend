@@ -41,4 +41,18 @@ public class MailService {
                 + "If this was not requested by you, ignore this email.\n\n"
                 + "- College Project Backend";
     }
+
+    public void sendAssignmentMail(String toEmail, String projectName) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        if (!fromAddress.isBlank()) {
+            message.setFrom(fromAddress);
+        }
+        message.setTo(toEmail);
+        message.setSubject("Project Assignment Notification: " + projectName);
+        message.setText("Dear Supervisor,\n\n"
+                + "You have been officially assigned to oversee the project: " + projectName + ".\n\n"
+                + "Please log into your NYT Flow dashboard to review the team members and project details.\n\n"
+                + "Thank You,\nNYT Flow Administration");
+        mailSender.send(message);
+    }
 }

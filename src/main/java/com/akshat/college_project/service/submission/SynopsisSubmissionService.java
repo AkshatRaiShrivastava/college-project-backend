@@ -39,6 +39,8 @@ public class SynopsisSubmissionService {
         submission.setSynopsisId(IdGenerator.generate("syn_"));
         submission.setDocumentId(request.documentId());
         submission.setComment(request.comment());
+        submission.setFileUrl(request.fileUrl());
+        submission.setFileName(request.fileName());
 
         SynopsisSubmission saved = repository.save(submission);
         documentService.appendSubmissionId(saved.getDocumentId(), StageStatus.SYNOPSIS, saved.getSynopsisId());

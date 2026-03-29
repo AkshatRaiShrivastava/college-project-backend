@@ -55,4 +55,16 @@ public class SupervisorRequestController {
         supervisorRequestService.delete(requestId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{requestId}/approve")
+    public ResponseEntity<SupervisorRequest> approve(@PathVariable Long requestId, @RequestBody java.util.Map<String, String> payload) {
+        String adminId = payload.get("adminId");
+        return ResponseEntity.ok(supervisorRequestService.approveRequest(requestId, adminId));
+    }
+
+    @PostMapping("/{requestId}/reject")
+    public ResponseEntity<SupervisorRequest> reject(@PathVariable Long requestId, @RequestBody java.util.Map<String, String> payload) {
+        String reason = payload.get("reason");
+        return ResponseEntity.ok(supervisorRequestService.rejectRequest(requestId, reason));
+    }
 }

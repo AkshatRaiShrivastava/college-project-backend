@@ -49,6 +49,15 @@ public class SupervisorRequest {
     @Column(name = "phone_number", nullable = false, length = 20)
     private String phoneNumber;
 
+    @Column(name = "approved_by", length = 30)
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private Instant approvedAt;
+
+    @Column(name = "rejection_reason", columnDefinition = "text")
+    private String rejectionReason;
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {

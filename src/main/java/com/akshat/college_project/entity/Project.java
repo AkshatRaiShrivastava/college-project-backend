@@ -94,4 +94,21 @@ public class Project {
             stageStatus = StageStatus.SYNOPSIS;
         }
     }
+
+    @jakarta.persistence.Transient
+    public Double getCalculatedSupervisorAverage() {
+        int count = 0;
+        double sum = 0;
+        if (synopsisScore != null && !synopsisScore.isEmpty()) { sum += Double.parseDouble(synopsisScore); count++; }
+        if (progress1Score != null && !progress1Score.isEmpty()) { sum += Double.parseDouble(progress1Score); count++; }
+        if (progress2Score != null && !progress2Score.isEmpty()) { sum += Double.parseDouble(progress2Score); count++; }
+        if (finalScore != null && !finalScore.isEmpty()) { sum += Double.parseDouble(finalScore); count++; }
+        return count == 0 ? 0.0 : sum / count;
+    }
+
+    @jakarta.persistence.Transient
+    public Double getCalculatedFinalScore() {
+        double adminScore = (adminFinalScore != null && !adminFinalScore.isEmpty()) ? Double.parseDouble(adminFinalScore) : 0.0;
+        return getCalculatedSupervisorAverage() + adminScore;
+    }
 }

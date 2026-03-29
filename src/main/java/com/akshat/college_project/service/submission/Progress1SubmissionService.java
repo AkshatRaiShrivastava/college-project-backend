@@ -36,9 +36,11 @@ public class Progress1SubmissionService {
         referenceValidator.requireDocument(request.documentId());
 
         Progress1Submission submission = new Progress1Submission();
-        submission.setProgress1Id(IdGenerator.generate("p1_"));
+        submission.setProgress1Id(IdGenerator.generate("pg1_"));
         submission.setDocumentId(request.documentId());
         submission.setComment(request.comment());
+        submission.setFileUrl(request.fileUrl());
+        submission.setFileName(request.fileName());
 
         Progress1Submission saved = repository.save(submission);
         documentService.appendSubmissionId(saved.getDocumentId(), StageStatus.PROGRESS1, saved.getProgress1Id());

@@ -16,24 +16,33 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import com.akshat.college_project.repository.SupervisorRepository;
+import com.akshat.college_project.entity.Supervisor;
+
 @Service
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final TeamRepository teamRepository;
     private final DocumentRepository documentRepository;
+    private final SupervisorRepository supervisorRepository;
     private final ReferenceValidator referenceValidator;
+    private final MailService mailService;
 
     public ProjectService(
             ProjectRepository projectRepository,
             TeamRepository teamRepository,
             DocumentRepository documentRepository,
-            ReferenceValidator referenceValidator
+            SupervisorRepository supervisorRepository,
+            ReferenceValidator referenceValidator,
+            MailService mailService
     ) {
         this.projectRepository = projectRepository;
         this.teamRepository = teamRepository;
         this.documentRepository = documentRepository;
+        this.supervisorRepository = supervisorRepository;
         this.referenceValidator = referenceValidator;
+        this.mailService = mailService;
     }
 
     @Transactional
@@ -126,11 +135,16 @@ public class ProjectService {
             project.setFormId(request.formId());
         }
 
+        boolean triggerEmail = false;
+
         if (request.supervisorId() != null) {
             if (project.getSupervisorId() != null && !project.getSupervisorId().equals(request.supervisorId())) {
                 project.setOldSupervisor(project.getSupervisorId());
             }
             referenceValidator.requireSupervisor(request.supervisorId());
+            if (project.getSupervisorId() == null || !project.getSupervisorId().equals(request.supervisorId())) {
+                triggerEmail = true;
+            }
             project.setSupervisorId(request.supervisorId());
         }
 
@@ -141,6 +155,17 @@ public class ProjectService {
 
         if (request.projectTitle() != null) {
             project.setProjectTitle(request.projectTitle());
+        }
+
+        if (triggerEmail) {
+            final String finalTitle = project.getProjectTitle();
+            supervisorRepository.findById(request.supervisorId()).ifPresent(sup -> {
+                try {
+                    mailService.sendAssignmentMail(sup.getMail(), finalTitle != null ? finalTitle : "New Project");
+                } catch (Exception e) {
+                    System.err.println("Failed to send assignment email: " + e.getMessage());
+                }
+            });
         }
         if (request.projectDescription() != null) {
             project.setProjectDescription(request.projectDescription());
