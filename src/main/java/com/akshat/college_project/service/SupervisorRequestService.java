@@ -28,6 +28,7 @@ public class SupervisorRequestService {
         supervisorRequest.setDepartment(request.department());
         supervisorRequest.setMail(request.mail());
         supervisorRequest.setPhoneNumber(request.phoneNumber());
+        supervisorRequest.setPassword(request.password());
         return supervisorRequestRepository.save(supervisorRequest);
     }
 
@@ -88,10 +89,9 @@ public class SupervisorRequestService {
         supervisor.setMail(request.getMail());
         supervisor.setBranch(request.getDepartment());
         
-        // Random 8 character password for temp login
-        String tempPassword = "Temp@" + java.util.UUID.randomUUID().toString().substring(0, 6);
-        supervisor.setPassword(tempPassword); 
-        supervisor.setOtpVerified(false); // Admin requires them to login and verify
+        // Use the password they created during the registration flow
+        supervisor.setPassword(request.getPassword()); 
+        supervisor.setOtpVerified(true); // OTP was verified prior to Admin Request creation
         
         supervisorRepository.save(supervisor);
 

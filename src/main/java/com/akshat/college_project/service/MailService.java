@@ -42,16 +42,32 @@ public class MailService {
                 + "- College Project Backend";
     }
 
-    public void sendAssignmentMail(String toEmail, String projectName) {
+    @org.springframework.scheduling.annotation.Async
+    public void sendAssignmentMail(String toEmail, String projectName, String adminName) {
         SimpleMailMessage message = new SimpleMailMessage();
         if (!fromAddress.isBlank()) {
             message.setFrom(fromAddress);
         }
         message.setTo(toEmail);
-        message.setSubject("Project Assignment Notification: " + projectName);
+        message.setSubject("Assigned as Supervisor");
         message.setText("Dear Supervisor,\n\n"
-                + "You have been officially assigned to oversee the project: " + projectName + ".\n\n"
-                + "Please log into your NYT Flow dashboard to review the team members and project details.\n\n"
+                + "You have been assigned as supervisor for Project: " + projectName + "\n"
+                + "Assigned By: " + adminName + "\n\n"
+                + "Thank You,\nNYT Flow Administration");
+        mailSender.send(message);
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    public void sendUnassignmentMail(String toEmail, String projectName, String reason) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        if (!fromAddress.isBlank()) {
+            message.setFrom(fromAddress);
+        }
+        message.setTo(toEmail);
+        message.setSubject("Unassigned from Project: " + projectName);
+        message.setText("Dear Supervisor,\n\n"
+                + "You have been unassigned from Project: " + projectName + "\n"
+                + "Reason: " + (reason != null ? reason : "Administrative Reassignment") + "\n\n"
                 + "Thank You,\nNYT Flow Administration");
         mailSender.send(message);
     }

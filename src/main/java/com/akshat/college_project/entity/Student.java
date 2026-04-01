@@ -41,7 +41,6 @@ public class Student {
     @Column(name = "mail", nullable = false, length = 150)
     private String mail;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
