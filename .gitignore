@@ -33,3 +33,7 @@ build/
 .vscode/
 
 .vercel
+
+# Environment configuration
+.env
+.env.*

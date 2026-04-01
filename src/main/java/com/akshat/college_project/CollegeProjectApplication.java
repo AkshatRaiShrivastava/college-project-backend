@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class CollegeProjectApplication {
 
     public static void main(String[] args) {
+        io.github.cdimascio.dotenv.Dotenv.configure().ignoreIfMissing().systemProperties().load();
         SpringApplication.run(CollegeProjectApplication.class, args);
     }
 
