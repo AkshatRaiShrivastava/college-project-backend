@@ -49,6 +49,9 @@ public class Supervisor {
     @Column(name = "otp_verified", nullable = false, columnDefinition = "boolean default false")
     private Boolean otpVerified;
 
+    @Column(name = "performance_score", nullable = false, columnDefinition = "float8 default 100.0")
+    private Double performanceScore;
+
     @Column(name = "create_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -63,6 +66,9 @@ public class Supervisor {
         }
         if (createdAt == null) {
             createdAt = Instant.now();
+        }
+        if (performanceScore == null) {
+            performanceScore = 100.0;
         }
         if (enrollStatus == null) {
             enrollStatus = SupervisorEnrollStatus.ACTIVE;
