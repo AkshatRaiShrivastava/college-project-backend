@@ -49,6 +49,9 @@ public class SupervisorRequest {
     @Column(name = "phone_number", nullable = false, length = 20)
     private String phoneNumber;
 
+    @Column(name = "password", length = 255)
+    private String password;
+
     @Column(name = "approved_by", length = 30)
     private String approvedBy;
 

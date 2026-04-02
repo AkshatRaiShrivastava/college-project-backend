@@ -18,6 +18,11 @@ import java.util.List;
 
 import com.akshat.college_project.repository.SupervisorRepository;
 import com.akshat.college_project.entity.Supervisor;
+import com.akshat.college_project.entity.SupervisorHistory;
+import com.akshat.college_project.repository.SupervisorHistoryRepository;
+import com.akshat.college_project.repository.AdminRepository;
+import com.akshat.college_project.dto.SupervisorAssignRequest;
+import com.akshat.college_project.entity.Admin;
 
 @Service
 public class ProjectService {
@@ -28,6 +33,9 @@ public class ProjectService {
     private final SupervisorRepository supervisorRepository;
     private final ReferenceValidator referenceValidator;
     private final MailService mailService;
+    private final SupervisorHistoryRepository supervisorHistoryRepository;
+    private final NotificationService notificationService;
+    private final AdminRepository adminRepository;
 
     public ProjectService(
             ProjectRepository projectRepository,
@@ -35,7 +43,10 @@ public class ProjectService {
             DocumentRepository documentRepository,
             SupervisorRepository supervisorRepository,
             ReferenceValidator referenceValidator,
-            MailService mailService
+            MailService mailService,
+            SupervisorHistoryRepository supervisorHistoryRepository,
+            NotificationService notificationService,
+            AdminRepository adminRepository
     ) {
         this.projectRepository = projectRepository;
         this.teamRepository = teamRepository;
@@ -43,6 +54,9 @@ public class ProjectService {
         this.supervisorRepository = supervisorRepository;
         this.referenceValidator = referenceValidator;
         this.mailService = mailService;
+        this.supervisorHistoryRepository = supervisorHistoryRepository;
+        this.notificationService = notificationService;
+        this.adminRepository = adminRepository;
     }
 
     @Transactional
@@ -161,7 +175,7 @@ public class ProjectService {
             final String finalTitle = project.getProjectTitle();
             supervisorRepository.findById(request.supervisorId()).ifPresent(sup -> {
                 try {
-                    mailService.sendAssignmentMail(sup.getMail(), finalTitle != null ? finalTitle : "New Project");
+                    mailService.sendAssignmentMail(sup.getMail(), finalTitle != null ? finalTitle : "New Project", "Admin");
                 } catch (Exception e) {
                     System.err.println("Failed to send assignment email: " + e.getMessage());
                 }
@@ -234,5 +248,98 @@ public class ProjectService {
             teamRepository.save(team);
         });
         projectRepository.delete(project);
+    }
+
+    @Transactional
+    public Project assignSupervisor(String projectId, SupervisorAssignRequest request) {
+        Project project = get(projectId);
+        referenceValidator.requireSupervisor(request.supervisorId());
+        referenceValidator.requireAdmin(request.adminId());
+
+        String oldSupervisorId = project.getSupervisorId();
+        String newSupervisorId = request.supervisorId();
+
+        if (newSupervisorId.equals(oldSupervisorId)) {
+            throw new BadRequestException("Supervisor is already assigned to this project.");
+        }
+
+        if (oldSupervisorId != null && (request.reason() == null || request.reason().isBlank())) {
+            throw new BadRequestException("Reason is required when changing an existing supervisor.");
+        }
+
+        project.setOldSupervisor(oldSupervisorId);
+        project.setSupervisorId(newSupervisorId);
+        project.setSupervisorAssignedBy(request.adminId());
+        
+        Project savedProject = projectRepository.save(project);
+
+        SupervisorHistory history = new SupervisorHistory();
+        history.setId(IdGenerator.generate("suph_"));
+        history.setProjectId(projectId);
+        history.setOldSupervisorId(oldSupervisorId);
+        history.setNewSupervisorId(newSupervisorId);
+        history.setChangedBy(request.adminId());
+        history.setReason(request.reason());
+        supervisorHistoryRepository.save(history);
+
+        Admin admin = adminRepository.findById(request.adminId()).orElse(null);
+        String adminName = admin != null ? admin.getName() : "System Admin";
+        
+        Supervisor newSupervisor = supervisorRepository.findById(newSupervisorId).orElse(null);
+        String newSuperName = newSupervisor != null ? newSupervisor.getName() : newSupervisorId;
+
+        // Notify New Supervisor
+        notificationService.createNotification(newSupervisorId, "supervisor",
+                "You have been assigned to Project: " + project.getProjectTitle());
+        if (newSupervisor != null) {
+            mailService.sendAssignmentMail(newSupervisor.getMail(), project.getProjectTitle(), adminName);
+        }
+
+        // Notify Old Supervisor
+        if (oldSupervisorId != null) {
+            notificationService.createNotification(oldSupervisorId, "supervisor",
+                    "You have been unassigned from Project: " + project.getProjectTitle() + ". Reason: " + request.reason());
+            Supervisor oldSupervisor = supervisorRepository.findById(oldSupervisorId).orElse(null);
+            if (oldSupervisor != null) {
+                mailService.sendUnassignmentMail(oldSupervisor.getMail(), project.getProjectTitle(), request.reason());
+            }
+        }
+
+        // Notify Students
+        try {
+            Team team = teamRepository.findById(project.getTeamId()).orElse(null);
+            if (team != null && team.getTeamMemberArray() != null) {
+                List<String> studentIds = new java.util.ArrayList<>();
+                String arrayStr = team.getTeamMemberArray();
+                if (arrayStr != null && arrayStr.startsWith("[") && arrayStr.endsWith("]")) {
+                    String inner = arrayStr.substring(1, arrayStr.length() - 1);
+                    if (!inner.isEmpty()) {
+                        String[] parts = inner.split(",");
+                        for (String part : parts) {
+                            studentIds.add(part.trim().replace("\"", ""));
+                        }
+                    }
+                }
+                for (String studentId : studentIds) {
+                    if (oldSupervisorId == null) {
+                        notificationService.createNotification(studentId, "student",
+                                "Supervisor " + newSuperName + " has been assigned to your project.");
+                    } else {
+                        Supervisor oldSupervisor = supervisorRepository.findById(oldSupervisorId).orElse(null);
+                        String oldSuperName = oldSupervisor != null ? oldSupervisor.getName() : oldSupervisorId;
+                        notificationService.createNotification(studentId, "student",
+                                "Supervisor changed from " + oldSuperName + " to " + newSuperName + " by Admin.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to parse team members for notifications: " + e.getMessage());
+        }
+
+        return savedProject;
+    }
+
+    public List<SupervisorHistory> getSupervisorHistory(String projectId) {
+        return supervisorHistoryRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
     }
 }

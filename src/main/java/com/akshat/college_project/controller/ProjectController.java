@@ -58,4 +58,14 @@ public class ProjectController {
         projectService.delete(projectId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{projectId}/assign-supervisor")
+    public Project assignSupervisor(@PathVariable String projectId, @Valid @RequestBody com.akshat.college_project.dto.SupervisorAssignRequest request) {
+        return projectService.assignSupervisor(projectId, request);
+    }
+
+    @GetMapping("/{projectId}/supervisor-history")
+    public List<com.akshat.college_project.entity.SupervisorHistory> getSupervisorHistory(@PathVariable String projectId) {
+        return projectService.getSupervisorHistory(projectId);
+    }
 }
