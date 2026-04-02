@@ -11,5 +11,7 @@ public interface ProjectRepository extends JpaRepository<Project, String> {
 
     Optional<Project> findByTeamId(String teamId);
 
+    java.util.List<Project> findByFormId(String formId);
+
     Optional<Project> findByDocumentId(String documentId);
 }

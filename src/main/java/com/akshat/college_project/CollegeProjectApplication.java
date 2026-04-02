@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 @SpringBootApplication
 @org.springframework.scheduling.annotation.EnableAsync
+@org.springframework.scheduling.annotation.EnableScheduling
 public class CollegeProjectApplication {
 
     public static void main(String[] args) {
@@ -19,6 +20,11 @@ public class CollegeProjectApplication {
     @Bean
     public org.springframework.web.reactive.function.client.WebClient.Builder webClientBuilder() {
         return org.springframework.web.reactive.function.client.WebClient.builder();
+    }
+
+    @Bean
+    public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
+        return new com.fasterxml.jackson.databind.ObjectMapper();
     }
 
     @Bean
