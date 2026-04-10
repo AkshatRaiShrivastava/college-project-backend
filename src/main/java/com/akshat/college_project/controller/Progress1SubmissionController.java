@@ -1,7 +1,8 @@
 package com.akshat.college_project.controller;
 
 import com.akshat.college_project.dto.SubmissionCreateRequest;
-import com.akshat.college_project.dto.SubmissionReviewRequest;
+import com.akshat.college_project.dto.SupervisorSubmissionReviewRequest;
+import com.akshat.college_project.dto.TeamSubmissionReviewRequest;
 import com.akshat.college_project.entity.Progress1Submission;
 import com.akshat.college_project.service.submission.Progress1SubmissionService;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,31 +31,42 @@ public class Progress1SubmissionController {
     }
 
     @PostMapping
-    public ResponseEntity<Progress1Submission> create(@Valid @RequestBody SubmissionCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(progress1SubmissionService.create(request));
+    public ResponseEntity<Progress1Submission> create(
+            @Valid @RequestBody SubmissionCreateRequest request,
+            @RequestHeader("X-User-ID") String userId
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(progress1SubmissionService.create(request, userId));
     }
 
     @GetMapping("/{submissionId}")
-    public Progress1Submission get(@PathVariable String submissionId) {
-        return progress1SubmissionService.get(submissionId);
+    public Progress1Submission get(@PathVariable String submissionId, @RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return progress1SubmissionService.get(submissionId, userId);
     }
 
     @GetMapping
-    public List<Progress1Submission> getAll() {
-        return progress1SubmissionService.getAll();
+    public List<Progress1Submission> getAll(@RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return progress1SubmissionService.getAll(userId);
     }
 
     @GetMapping("/document/{documentId}")
-    public List<Progress1Submission> getByDocument(@PathVariable String documentId) {
-        return progress1SubmissionService.getByDocument(documentId);
+    public List<Progress1Submission> getByDocument(@PathVariable String documentId, @RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return progress1SubmissionService.getByDocument(documentId, userId);
     }
 
-    @PatchMapping("/{submissionId}/review")
-    public Progress1Submission review(
+    @PatchMapping("/{submissionId}/team-review")
+    public Progress1Submission teamReview(
             @PathVariable String submissionId,
-            @Valid @RequestBody SubmissionReviewRequest request
+            @Valid @RequestBody TeamSubmissionReviewRequest request
     ) {
-        return progress1SubmissionService.review(submissionId, request);
+        return progress1SubmissionService.teamReview(submissionId, request);
+    }
+
+    @PatchMapping("/{submissionId}/supervisor-review")
+    public Progress1Submission supervisorReview(
+            @PathVariable String submissionId,
+            @Valid @RequestBody SupervisorSubmissionReviewRequest request
+    ) {
+        return progress1SubmissionService.supervisorReview(submissionId, request);
     }
 
     @DeleteMapping("/{submissionId}")

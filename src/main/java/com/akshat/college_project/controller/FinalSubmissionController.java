@@ -1,7 +1,8 @@
 package com.akshat.college_project.controller;
 
 import com.akshat.college_project.dto.SubmissionCreateRequest;
-import com.akshat.college_project.dto.SubmissionReviewRequest;
+import com.akshat.college_project.dto.SupervisorSubmissionReviewRequest;
+import com.akshat.college_project.dto.TeamSubmissionReviewRequest;
 import com.akshat.college_project.entity.FinalSubmission;
 import com.akshat.college_project.service.submission.FinalSubmissionService;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,31 +31,42 @@ public class FinalSubmissionController {
     }
 
     @PostMapping
-    public ResponseEntity<FinalSubmission> create(@Valid @RequestBody SubmissionCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(finalSubmissionService.create(request));
+    public ResponseEntity<FinalSubmission> create(
+            @Valid @RequestBody SubmissionCreateRequest request,
+            @RequestHeader("X-User-ID") String userId
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(finalSubmissionService.create(request, userId));
     }
 
     @GetMapping("/{submissionId}")
-    public FinalSubmission get(@PathVariable String submissionId) {
-        return finalSubmissionService.get(submissionId);
+    public FinalSubmission get(@PathVariable String submissionId, @RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return finalSubmissionService.get(submissionId, userId);
     }
 
     @GetMapping
-    public List<FinalSubmission> getAll() {
-        return finalSubmissionService.getAll();
+    public List<FinalSubmission> getAll(@RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return finalSubmissionService.getAll(userId);
     }
 
     @GetMapping("/document/{documentId}")
-    public List<FinalSubmission> getByDocument(@PathVariable String documentId) {
-        return finalSubmissionService.getByDocument(documentId);
+    public List<FinalSubmission> getByDocument(@PathVariable String documentId, @RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return finalSubmissionService.getByDocument(documentId, userId);
     }
 
-    @PatchMapping("/{submissionId}/review")
-    public FinalSubmission review(
+    @PatchMapping("/{submissionId}/team-review")
+    public FinalSubmission teamReview(
             @PathVariable String submissionId,
-            @Valid @RequestBody SubmissionReviewRequest request
+            @Valid @RequestBody TeamSubmissionReviewRequest request
     ) {
-        return finalSubmissionService.review(submissionId, request);
+        return finalSubmissionService.teamReview(submissionId, request);
+    }
+
+    @PatchMapping("/{submissionId}/supervisor-review")
+    public FinalSubmission supervisorReview(
+            @PathVariable String submissionId,
+            @Valid @RequestBody SupervisorSubmissionReviewRequest request
+    ) {
+        return finalSubmissionService.supervisorReview(submissionId, request);
     }
 
     @DeleteMapping("/{submissionId}")

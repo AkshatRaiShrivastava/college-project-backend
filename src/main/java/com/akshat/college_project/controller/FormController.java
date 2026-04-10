@@ -1,5 +1,7 @@
 package com.akshat.college_project.controller;
 
+import com.akshat.college_project.dto.FormAttachment;
+import com.akshat.college_project.dto.FormAttachmentLinkRequest;
 import com.akshat.college_project.dto.FormCreateRequest;
 import com.akshat.college_project.dto.FormUpdateRequest;
 import com.akshat.college_project.entity.Form;
@@ -14,7 +16,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 
@@ -42,6 +47,30 @@ public class FormController {
     public List<Form> getAll() {
         return formService.getAll();
     }
+
+    @GetMapping("/{formId}/attachments")
+    public List<FormAttachment> getAttachments(@PathVariable String formId) {
+        return formService.getAttachments(formId);
+    }
+
+    @PostMapping(value = "/{formId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FormAttachment> uploadAttachment(
+            @PathVariable String formId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "uploadedBy", required = false) String uploadedBy
+    ) throws Exception {
+        return ResponseEntity.status(HttpStatus.CREATED).body(formService.uploadAttachment(formId, file, uploadedBy));
+    }
+
+        @PostMapping("/{formId}/attachments/link")
+        public ResponseEntity<FormAttachment> addAttachmentLink(
+            @PathVariable String formId,
+            @Valid @RequestBody FormAttachmentLinkRequest request
+        ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            formService.addAttachmentLink(formId, request.fileName(), request.fileUrl(), request.uploadedBy())
+        );
+        }
 
     @PutMapping("/{formId}")
     public Form update(@PathVariable String formId, @RequestBody FormUpdateRequest request) {

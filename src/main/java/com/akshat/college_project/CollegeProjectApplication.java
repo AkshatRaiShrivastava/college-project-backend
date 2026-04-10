@@ -24,7 +24,7 @@ public class CollegeProjectApplication {
 
     @Bean
     public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
-        return new com.fasterxml.jackson.databind.ObjectMapper();
+        return new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules();
     }
 
     @Bean

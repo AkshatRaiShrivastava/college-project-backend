@@ -35,6 +35,10 @@ public class Form {
     @ColumnTransformer(write = "CAST(? AS jsonb)")
     private String jsonOfFields;
 
+    @Column(name = "reference_files_json", nullable = false, columnDefinition = "jsonb")
+    @ColumnTransformer(write = "CAST(? AS jsonb)")
+    private String referenceFilesJson;
+
     @Column(name = "create_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -45,6 +49,9 @@ public class Form {
     public void prePersist() {
         if (createdAt == null) {
             createdAt = Instant.now();
+        }
+        if (referenceFilesJson == null) {
+            referenceFilesJson = "[]";
         }
     }
 }

@@ -28,6 +28,22 @@ public class DatabaseSchemaPatch {
         run("ALTER TABLE IF EXISTS admin ADD COLUMN IF NOT EXISTS otp_verified boolean not null default false");
         run("ALTER TABLE IF EXISTS students ADD COLUMN IF NOT EXISTS otp_verified boolean not null default false");
         run("ALTER TABLE IF EXISTS supervisor ADD COLUMN IF NOT EXISTS otp_verified boolean not null default false");
+
+        run("ALTER TABLE IF EXISTS form ADD COLUMN IF NOT EXISTS reference_files_json jsonb DEFAULT '[]'::jsonb");
+        run("UPDATE form SET reference_files_json = '[]'::jsonb WHERE reference_files_json IS NULL");
+        run("ALTER TABLE IF EXISTS form ALTER COLUMN reference_files_json SET NOT NULL");
+
+        for (String table : new String[]{"synopsis", "progress1", "progress2", "final_submission"}) {
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS project_id varchar(30)");
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS leader_id varchar(30)");
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS version_no integer not null default 1");
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS revision_of varchar(30)");
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS team_review_json jsonb DEFAULT '[]'::jsonb");
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS team_review_status varchar(20) DEFAULT 'PENDING'");
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS visible_to_supervisor boolean not null default false");
+            run("ALTER TABLE IF EXISTS " + table + " ADD COLUMN IF NOT EXISTS visible_to_admin boolean not null default false");
+            run("UPDATE " + table + " SET team_review_json = '[]'::jsonb WHERE team_review_json IS NULL");
+        }
     }
 
     private void run(String sql) {

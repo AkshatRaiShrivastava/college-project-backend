@@ -1,7 +1,8 @@
 package com.akshat.college_project.controller;
 
 import com.akshat.college_project.dto.SubmissionCreateRequest;
-import com.akshat.college_project.dto.SubmissionReviewRequest;
+import com.akshat.college_project.dto.SupervisorSubmissionReviewRequest;
+import com.akshat.college_project.dto.TeamSubmissionReviewRequest;
 import com.akshat.college_project.entity.SynopsisSubmission;
 import com.akshat.college_project.service.submission.SynopsisSubmissionService;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,31 +31,42 @@ public class SynopsisSubmissionController {
     }
 
     @PostMapping
-    public ResponseEntity<SynopsisSubmission> create(@Valid @RequestBody SubmissionCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(synopsisSubmissionService.create(request));
+    public ResponseEntity<SynopsisSubmission> create(
+            @Valid @RequestBody SubmissionCreateRequest request,
+            @RequestHeader("X-User-ID") String userId
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(synopsisSubmissionService.create(request, userId));
     }
 
     @GetMapping("/{submissionId}")
-    public SynopsisSubmission get(@PathVariable String submissionId) {
-        return synopsisSubmissionService.get(submissionId);
+    public SynopsisSubmission get(@PathVariable String submissionId, @RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return synopsisSubmissionService.get(submissionId, userId);
     }
 
     @GetMapping
-    public List<SynopsisSubmission> getAll() {
-        return synopsisSubmissionService.getAll();
+    public List<SynopsisSubmission> getAll(@RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return synopsisSubmissionService.getAll(userId);
     }
 
     @GetMapping("/document/{documentId}")
-    public List<SynopsisSubmission> getByDocument(@PathVariable String documentId) {
-        return synopsisSubmissionService.getByDocument(documentId);
+    public List<SynopsisSubmission> getByDocument(@PathVariable String documentId, @RequestHeader(value = "X-User-ID", required = false) String userId) {
+        return synopsisSubmissionService.getByDocument(documentId, userId);
     }
 
-    @PatchMapping("/{submissionId}/review")
-    public SynopsisSubmission review(
+    @PatchMapping("/{submissionId}/team-review")
+    public SynopsisSubmission teamReview(
             @PathVariable String submissionId,
-            @Valid @RequestBody SubmissionReviewRequest request
+            @Valid @RequestBody TeamSubmissionReviewRequest request
     ) {
-        return synopsisSubmissionService.review(submissionId, request);
+        return synopsisSubmissionService.teamReview(submissionId, request);
+    }
+
+    @PatchMapping("/{submissionId}/supervisor-review")
+    public SynopsisSubmission supervisorReview(
+            @PathVariable String submissionId,
+            @Valid @RequestBody SupervisorSubmissionReviewRequest request
+    ) {
+        return synopsisSubmissionService.supervisorReview(submissionId, request);
     }
 
     @DeleteMapping("/{submissionId}")
