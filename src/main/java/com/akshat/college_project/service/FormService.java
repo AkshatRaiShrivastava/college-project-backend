@@ -68,10 +68,12 @@ public class FormService {
     }
 
     @Transactional
-    public FormAttachment uploadAttachment(String formId, MultipartFile file, String uploadedBy) throws IOException {
+    public FormAttachment uploadAttachment(String formId, MultipartFile file, String uploadedBy, String stage) throws IOException {
         if (uploadedBy != null && !uploadedBy.isBlank()) {
             referenceValidator.requireAdmin(uploadedBy);
         }
+
+        String normalizedStage = normalizeStage(stage);
 
         Form form = get(formId);
         String fileUrl = oneDriveStorageService.uploadFile(file, formId, "reference-files");
@@ -83,7 +85,8 @@ public class FormService {
                 fileUrl,
                 uploadedBy,
             Instant.now(),
-            "UPLOAD"
+            "UPLOAD",
+            normalizedStage
         );
 
         List<FormAttachment> attachments = new ArrayList<>(readAttachments(form.getReferenceFilesJson()));
@@ -94,10 +97,12 @@ public class FormService {
     }
 
     @Transactional
-    public FormAttachment addAttachmentLink(String formId, String fileName, String fileUrl, String uploadedBy) {
+    public FormAttachment addAttachmentLink(String formId, String fileName, String fileUrl, String stage, String uploadedBy) {
         if (uploadedBy != null && !uploadedBy.isBlank()) {
             referenceValidator.requireAdmin(uploadedBy);
         }
+
+        String normalizedStage = normalizeStage(stage);
 
         if (fileUrl == null || fileUrl.isBlank() || !fileUrl.startsWith("http")) {
             throw new BadRequestException("Invalid file URL");
@@ -110,7 +115,8 @@ public class FormService {
                 fileUrl,
                 uploadedBy,
                 Instant.now(),
-                "LINK"
+            "LINK",
+            normalizedStage
         );
 
         List<FormAttachment> attachments = new ArrayList<>(readAttachments(form.getReferenceFilesJson()));
@@ -118,6 +124,17 @@ public class FormService {
         form.setReferenceFilesJson(writeAttachments(attachments));
         formRepository.save(form);
         return attachment;
+    }
+
+    private String normalizeStage(String stage) {
+        if (stage == null || stage.isBlank()) {
+            return "GENERAL";
+        }
+        String value = stage.trim().toUpperCase();
+        return switch (value) {
+            case "SYNOPSIS", "PROGRESS1", "PROGRESS2", "FINAL", "ALL", "GENERAL" -> value;
+            default -> throw new BadRequestException("Invalid stage");
+        };
     }
 
     public Form update(String formId, FormUpdateRequest request) {

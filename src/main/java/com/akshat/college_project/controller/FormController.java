@@ -57,9 +57,10 @@ public class FormController {
     public ResponseEntity<FormAttachment> uploadAttachment(
             @PathVariable String formId,
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "stage", required = false) String stage,
             @RequestParam(value = "uploadedBy", required = false) String uploadedBy
     ) throws Exception {
-        return ResponseEntity.status(HttpStatus.CREATED).body(formService.uploadAttachment(formId, file, uploadedBy));
+        return ResponseEntity.status(HttpStatus.CREATED).body(formService.uploadAttachment(formId, file, uploadedBy, stage));
     }
 
         @PostMapping("/{formId}/attachments/link")
@@ -68,7 +69,7 @@ public class FormController {
             @Valid @RequestBody FormAttachmentLinkRequest request
         ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            formService.addAttachmentLink(formId, request.fileName(), request.fileUrl(), request.uploadedBy())
+                formService.addAttachmentLink(formId, request.fileName(), request.fileUrl(), request.stage(), request.uploadedBy())
         );
         }
 

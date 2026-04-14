@@ -8,6 +8,7 @@ public record FormAttachment(
         String fileUrl,
         String uploadedBy,
         Instant uploadedAt,
-        String source
+        String source,
+        String stage
 ) {
 }

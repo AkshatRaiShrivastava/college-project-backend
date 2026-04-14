@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 public record FormAttachmentLinkRequest(
         @NotBlank String fileName,
         @NotBlank String fileUrl,
+        @NotBlank String stage,
         String uploadedBy
 ) {
 }
