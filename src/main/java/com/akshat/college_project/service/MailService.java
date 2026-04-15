@@ -12,15 +12,18 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final String fromAddress;
     private final long otpTtlMinutes;
+    private final String frontendUrl;
 
     public MailService(
             JavaMailSender mailSender,
             @Value("${app.mail.from:}") String fromAddress,
-            @Value("${app.otp.ttl-minutes:10}") long otpTtlMinutes
+            @Value("${app.otp.ttl-minutes:10}") long otpTtlMinutes,
+            @Value("${app.frontend.url:http://localhost:5173}") String frontendUrl
     ) {
         this.mailSender = mailSender;
         this.fromAddress = fromAddress;
         this.otpTtlMinutes = otpTtlMinutes;
+        this.frontendUrl = frontendUrl;
     }
 
     public void sendOtpMail(String toEmail, String otpCode, AccountType accountType) {
@@ -69,6 +72,27 @@ public class MailService {
                 + "You have been unassigned from Project: " + projectName + "\n"
                 + "Reason: " + (reason != null ? reason : "Administrative Reassignment") + "\n\n"
                 + "Thank You,\nNYT Flow Administration");
+        mailSender.send(message);
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    public void sendStudentInviteMail(String toEmail, String name, String rollNumber, String branch, String batch) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        if (!fromAddress.isBlank()) {
+            message.setFrom(fromAddress);
+        }
+        message.setTo(toEmail);
+        message.setSubject("You're Invited to Project Management System");
+        message.setText("Hello " + name + ",\n\n"
+                + "You have been invited to access the Project Management System.\n\n"
+                + "Your details:\n"
+                + "Roll Number: " + rollNumber + "\n"
+                + "Branch: " + branch + "\n"
+                + "Batch: " + batch + "\n\n"
+                + "Please verify your account and set your password using the link below:\n\n"
+                + frontendUrl + "/login\n\n"
+                + "Click on \"First Time Student? Verify Account\"\n\n"
+                + "Thanks,\nAdmin Team");
         mailSender.send(message);
     }
 }

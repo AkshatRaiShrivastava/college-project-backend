@@ -110,4 +110,49 @@ public class StudentService {
         }
         return email.trim().toLowerCase();
     }
+
+    @Transactional
+    public void markOtpVerified(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        Student student = studentRepository.findByMailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new BadRequestException("Student not found"));
+        student.setOtpVerified(true);
+        studentRepository.save(student);
+    }
+
+    @Transactional
+    public void setupFirstTimePassword(String email, String rawPassword) {
+        if (rawPassword == null || rawPassword.length() < 6) {
+            throw new BadRequestException("Password must be at least 6 characters long");
+        }
+        String normalizedEmail = normalizeEmail(email);
+        Student student = studentRepository.findByMailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new BadRequestException("Student not found"));
+        
+        if (!Boolean.TRUE.equals(student.getOtpVerified())) {
+            throw new BadRequestException("Student OTP not verified yet");
+        }
+
+        String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(rawPassword, org.mindrot.jbcrypt.BCrypt.gensalt());
+        student.setPassword(hashedPassword);
+        studentRepository.save(student);
+    }
+
+    public Student verifyLogin(String email, String rawPassword) {
+        String normalizedEmail = normalizeEmail(email);
+        Student student = studentRepository.findByMailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new BadRequestException("Invalid email or password"));
+
+        String storedPassword = student.getPassword();
+        if (storedPassword != null && storedPassword.startsWith("$2a$")) {
+            if (!org.mindrot.jbcrypt.BCrypt.checkpw(rawPassword, storedPassword)) {
+                throw new BadRequestException("Invalid email or password");
+            }
+        } else {
+            if (!rawPassword.equals(storedPassword)) {
+                throw new BadRequestException("Invalid email or password");
+            }
+        }
+        return student;
+    }
 }

@@ -7,6 +7,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     boolean existsByMail(String mail);
     boolean existsByMailIgnoreCase(String mail);
+    java.util.Optional<Student> findByMailIgnoreCase(String mail);
 
     boolean existsByRollNo(String rollNo);
 }

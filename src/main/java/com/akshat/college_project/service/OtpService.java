@@ -64,6 +64,29 @@ public class OtpService {
     }
 
     @Transactional
+    public void sendOtpForFirstTimeVerification(String email) {
+        String normalizedEmail = normalizeEmail(email);
+
+        com.akshat.college_project.entity.Student student = studentRepository.findByMailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new BadRequestException("Student not registered. Contact admin."));
+
+        if (Boolean.TRUE.equals(student.getOtpVerified())) {
+            throw new BadRequestException("Already verified. Please login.");
+        }
+
+        expireActiveOtps(normalizedEmail, AccountType.STUDENT);
+
+        Otp otp = new Otp();
+        otp.setEmail(normalizedEmail);
+        otp.setCode(generateOtpCode());
+        otp.setAccountType(AccountType.STUDENT);
+        otp.setExpiresAt(LocalDateTime.now().plusMinutes(otpTtlMinutes));
+        otpRepository.save(otp);
+
+        mailService.sendOtpMail(normalizedEmail, otp.getCode(), AccountType.STUDENT);
+    }
+
+    @Transactional
     public void resendOtp(String email, AccountType accountType) {
         sendOtpForAccountCreation(email, accountType);
     }
