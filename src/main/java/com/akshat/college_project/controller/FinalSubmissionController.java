@@ -70,8 +70,11 @@ public class FinalSubmissionController {
     }
 
     @DeleteMapping("/{submissionId}")
-    public ResponseEntity<Void> delete(@PathVariable String submissionId) {
-        finalSubmissionService.delete(submissionId);
+    public ResponseEntity<Void> delete(
+            @PathVariable String submissionId,
+            @RequestHeader("X-User-ID") String userId
+    ) {
+        finalSubmissionService.delete(submissionId, userId);
         return ResponseEntity.noContent().build();
     }
 }

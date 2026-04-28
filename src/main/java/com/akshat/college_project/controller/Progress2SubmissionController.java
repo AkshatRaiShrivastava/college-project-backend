@@ -70,8 +70,11 @@ public class Progress2SubmissionController {
     }
 
     @DeleteMapping("/{submissionId}")
-    public ResponseEntity<Void> delete(@PathVariable String submissionId) {
-        progress2SubmissionService.delete(submissionId);
+    public ResponseEntity<Void> delete(
+            @PathVariable String submissionId,
+            @RequestHeader("X-User-ID") String userId
+    ) {
+        progress2SubmissionService.delete(submissionId, userId);
         return ResponseEntity.noContent().build();
     }
 }

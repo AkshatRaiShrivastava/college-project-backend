@@ -126,6 +126,23 @@ public class FormService {
         return attachment;
     }
 
+    @Transactional
+    public void deleteAttachment(String formId, String attachmentId, String requesterId) {
+        if (requesterId != null && !requesterId.isBlank()) {
+            referenceValidator.requireAdmin(requesterId);
+        }
+
+        Form form = get(formId);
+        List<FormAttachment> attachments = new ArrayList<>(readAttachments(form.getReferenceFilesJson()));
+        boolean removed = attachments.removeIf(item -> attachmentId.equals(item.attachmentId()));
+        if (!removed) {
+            throw new BadRequestException("Attachment not found: " + attachmentId);
+        }
+
+        form.setReferenceFilesJson(writeAttachments(attachments));
+        formRepository.save(form);
+    }
+
     private String normalizeStage(String stage) {
         if (stage == null || stage.isBlank()) {
             return "GENERAL";

@@ -70,8 +70,11 @@ public class SynopsisSubmissionController {
     }
 
     @DeleteMapping("/{submissionId}")
-    public ResponseEntity<Void> delete(@PathVariable String submissionId) {
-        synopsisSubmissionService.delete(submissionId);
+    public ResponseEntity<Void> delete(
+            @PathVariable String submissionId,
+            @RequestHeader("X-User-ID") String userId
+    ) {
+        synopsisSubmissionService.delete(submissionId, userId);
         return ResponseEntity.noContent().build();
     }
 }

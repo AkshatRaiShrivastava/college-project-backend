@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -72,6 +73,16 @@ public class FormController {
                 formService.addAttachmentLink(formId, request.fileName(), request.fileUrl(), request.stage(), request.uploadedBy())
         );
         }
+
+            @DeleteMapping("/{formId}/attachments/{attachmentId}")
+            public ResponseEntity<Void> deleteAttachment(
+                @PathVariable String formId,
+                @PathVariable String attachmentId,
+                @RequestHeader(value = "X-User-ID", required = false) String userId
+            ) {
+            formService.deleteAttachment(formId, attachmentId, userId);
+            return ResponseEntity.noContent().build();
+            }
 
     @PutMapping("/{formId}")
     public Form update(@PathVariable String formId, @RequestBody FormUpdateRequest request) {

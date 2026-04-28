@@ -95,15 +95,19 @@ public class FinalSubmissionService {
     }
 
     public List<FinalSubmission> getByDocument(String documentId, String requesterId) {
-        referenceValidator.requireDocument(documentId);
+        try {
+            referenceValidator.requireDocument(documentId);
+        } catch (Exception ex) {
+            return List.of();
+        }
         List<FinalSubmission> submissions = repository.findByDocumentId(documentId);
         if (requesterId == null || requesterId.isBlank()) {
             return submissions;
         }
         String role = workflowService.resolveRole(requesterId);
         return switch (role) {
-            case "ADMIN" -> submissions.stream().filter(FinalSubmission::getVisibleToAdmin).collect(Collectors.toList());
-            case "SUPERVISOR" -> submissions.stream().filter(FinalSubmission::getVisibleToSupervisor).collect(Collectors.toList());
+            case "ADMIN" -> submissions;
+            case "SUPERVISOR" -> submissions.stream().filter(submission -> canSupervisorAccess(submission, requesterId)).collect(Collectors.toList());
             case "STUDENT" -> submissions;
             default -> submissions;
         };
@@ -146,9 +150,6 @@ public class FinalSubmissionService {
     public FinalSubmission supervisorReview(String submissionId, SupervisorSubmissionReviewRequest request) {
         FinalSubmission submission = get(submissionId, request.supervisorId());
         workflowService.requireAssignedSupervisor(submission.getProjectId(), request.supervisorId());
-        if (!"APPROVED".equals(submission.getTeamReviewStatus())) {
-            throw new BadRequestException("Supervisor review is only available after full team approval");
-        }
 
         submission.setComment(request.comment() != null ? request.comment() : submission.getComment());
         submission.setVisibleToSupervisor(Boolean.TRUE);
@@ -163,8 +164,22 @@ public class FinalSubmissionService {
         return repository.save(submission);
     }
 
-    public void delete(String submissionId) {
-        FinalSubmission submission = get(submissionId, null);
+    public void delete(String submissionId, String requesterId) {
+        if (requesterId == null || requesterId.isBlank()) {
+            throw new BadRequestException("User id is required to delete submissions");
+        }
+
+        FinalSubmission submission = repository.findById(submissionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Final submission not found: " + submissionId));
+
+        boolean isAdmin = workflowService.isAdmin(requesterId);
+        if (!isAdmin) {
+            workflowService.requireLeader(submission.getProjectId(), requesterId);
+            if (SubmissionStatus.APPROVED.equals(submission.getStatus())) {
+                throw new BadRequestException("Approved submissions can only be deleted by admin");
+            }
+        }
+
         repository.delete(submission);
         documentService.removeSubmissionId(submission.getDocumentId(), StageStatus.FINAL, submission.getFinalId());
     }
@@ -187,16 +202,8 @@ public class FinalSubmissionService {
         }
         String role = workflowService.resolveRole(requesterId);
         switch (role) {
-            case "ADMIN" -> {
-                if (!Boolean.TRUE.equals(submission.getVisibleToAdmin())) {
-                    throw new BadRequestException("This submission is not visible to admin yet");
-                }
-            }
-            case "SUPERVISOR" -> {
-                if (!Boolean.TRUE.equals(submission.getVisibleToSupervisor())) {
-                    throw new BadRequestException("This submission is not visible to supervisor yet");
-                }
-            }
+            case "ADMIN" -> { }
+            case "SUPERVISOR" -> workflowService.requireAssignedSupervisor(submission.getProjectId(), requesterId);
             case "STUDENT" -> workflowService.requireStudentTeamMember(submission.getProjectId(), requesterId);
             default -> { }
         }
@@ -208,10 +215,19 @@ public class FinalSubmissionService {
         }
         String role = workflowService.resolveRole(requesterId);
         return switch (role) {
-            case "ADMIN" -> Boolean.TRUE.equals(submission.getVisibleToAdmin());
-            case "SUPERVISOR" -> Boolean.TRUE.equals(submission.getVisibleToSupervisor());
+            case "ADMIN" -> true;
+            case "SUPERVISOR" -> canSupervisorAccess(submission, requesterId);
             case "STUDENT" -> true;
             default -> false;
         };
+    }
+
+    private boolean canSupervisorAccess(FinalSubmission submission, String supervisorId) {
+        try {
+            workflowService.requireAssignedSupervisor(submission.getProjectId(), supervisorId);
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 }
