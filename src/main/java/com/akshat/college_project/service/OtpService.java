@@ -103,6 +103,10 @@ public class OtpService {
         verifyOtp(email, code, accountType);
     }
 
+    public void checkValidOtp(String email, String code, AccountType accountType) {
+        findValidOtp(email, code, accountType);
+    }
+
     private Otp findValidOtp(String email, String code, AccountType accountType) {
         String normalizedEmail = normalizeEmail(email);
         String normalizedCode = normalizeCode(code);
@@ -142,6 +146,53 @@ public class OtpService {
             case SUPERVISOR -> supervisorRepository.existsByMailIgnoreCase(email);
             case ADMIN -> adminRepository.existsByMailIgnoreCase(email);
         };
+    }
+
+    public AccountType determineAccountType(String email) {
+        String normalized = normalizeEmail(email);
+        if (studentRepository.existsByMailIgnoreCase(normalized)) return AccountType.STUDENT;
+        if (supervisorRepository.existsByMailIgnoreCase(normalized)) return AccountType.SUPERVISOR;
+        if (adminRepository.existsByMailIgnoreCase(normalized)) return AccountType.ADMIN;
+        throw new BadRequestException("No account found with this email address");
+    }
+
+    @Transactional
+    public void sendOtpForPasswordReset(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        AccountType accountType = determineAccountType(normalizedEmail);
+
+        expireActiveOtps(normalizedEmail, accountType);
+
+        Otp otp = new Otp();
+        otp.setEmail(normalizedEmail);
+        otp.setCode(generateOtpCode());
+        otp.setAccountType(accountType);
+        otp.setExpiresAt(LocalDateTime.now().plusMinutes(otpTtlMinutes));
+        otpRepository.save(otp);
+
+        mailService.sendPasswordResetMail(normalizedEmail, otp.getCode());
+    }
+
+    @Transactional
+    public void resetPassword(String email, String otpCode, String newPassword) {
+        String normalizedEmail = normalizeEmail(email);
+        AccountType accountType = determineAccountType(normalizedEmail);
+        
+        verifyOtp(normalizedEmail, otpCode, accountType);
+        
+        if (accountType == AccountType.STUDENT) {
+            com.akshat.college_project.entity.Student student = studentRepository.findByMailIgnoreCase(normalizedEmail).orElseThrow();
+            student.setPassword(org.mindrot.jbcrypt.BCrypt.hashpw(newPassword, org.mindrot.jbcrypt.BCrypt.gensalt()));
+            studentRepository.save(student);
+        } else if (accountType == AccountType.SUPERVISOR) {
+            com.akshat.college_project.entity.Supervisor supervisor = supervisorRepository.findByMailIgnoreCase(normalizedEmail).orElseThrow();
+            supervisor.setPassword(newPassword); // plaintext as required by frontend
+            supervisorRepository.save(supervisor);
+        } else if (accountType == AccountType.ADMIN) {
+            com.akshat.college_project.entity.Admin admin = adminRepository.findByMailIgnoreCase(normalizedEmail).orElseThrow();
+            admin.setPassword(newPassword); // plaintext as required by frontend
+            adminRepository.save(admin);
+        }
     }
 
     private String normalizeEmail(String email) {

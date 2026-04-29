@@ -7,4 +7,5 @@ public interface AdminRepository extends JpaRepository<Admin, String> {
 
     boolean existsByMail(String mail);
     boolean existsByMailIgnoreCase(String mail);
+    java.util.Optional<Admin> findByMailIgnoreCase(String mail);
 }

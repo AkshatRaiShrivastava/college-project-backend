@@ -45,6 +45,21 @@ public class MailService {
                 + "- College Project Backend";
     }
 
+    public void sendPasswordResetMail(String toEmail, String otpCode) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        if (!fromAddress.isBlank()) {
+            message.setFrom(fromAddress);
+        }
+        message.setTo(toEmail);
+        message.setSubject("Password Reset Request");
+        message.setText("Hello,\n\n"
+                + "You requested to reset your password. Your verification OTP is: " + otpCode + "\n"
+                + "This OTP expires in " + otpTtlMinutes + " minutes.\n\n"
+                + "If you did not request this, please ignore this email and your password will remain unchanged.\n\n"
+                + "- NYT Flow Administration");
+        mailSender.send(message);
+    }
+
     @org.springframework.scheduling.annotation.Async
     public void sendAssignmentMail(String toEmail, String projectName, String adminName) {
         SimpleMailMessage message = new SimpleMailMessage();

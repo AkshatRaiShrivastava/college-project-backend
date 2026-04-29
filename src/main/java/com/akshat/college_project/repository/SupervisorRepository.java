@@ -10,4 +10,5 @@ public interface SupervisorRepository extends JpaRepository<Supervisor, String> 
     boolean existsByMail(String mail);
     boolean existsByMailIgnoreCase(String mail);
     Optional<Supervisor> findByMail(String mail);
+    Optional<Supervisor> findByMailIgnoreCase(String mail);
 }

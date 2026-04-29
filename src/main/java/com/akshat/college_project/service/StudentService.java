@@ -10,8 +10,14 @@ import com.akshat.college_project.entity.enums.AccountType;
 import com.akshat.college_project.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class StudentService {
@@ -57,6 +63,46 @@ public class StudentService {
 
     public List<Student> getAll() {
         return studentRepository.findAll();
+    }
+
+    public Page<Student> getPaginatedStudents(String search, String branch, String batch, String status, Pageable pageable) {
+        Specification<Student> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null && !search.isBlank()) {
+                String searchPattern = "%" + search.trim().toLowerCase() + "%";
+                Predicate nameMatch = cb.like(cb.lower(root.get("name")), searchPattern);
+                Predicate rollMatch = cb.like(cb.lower(root.get("rollNo")), searchPattern);
+                predicates.add(cb.or(nameMatch, rollMatch));
+            }
+
+            if (branch != null && !branch.isBlank() && !branch.equalsIgnoreCase("ALL")) {
+                predicates.add(cb.equal(root.get("branch"), branch));
+            }
+
+            if (batch != null && !batch.isBlank() && !batch.equalsIgnoreCase("ALL")) {
+                predicates.add(cb.equal(root.get("batch"), batch));
+            }
+
+            if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+                try {
+                    predicates.add(cb.equal(root.get("enrollStatus"), com.akshat.college_project.entity.enums.StudentEnrollStatus.valueOf(status.toUpperCase())));
+                } catch (IllegalArgumentException e) {
+                    // Ignore invalid status filter rather than crashing
+                }
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return studentRepository.findAll(spec, pageable);
+    }
+
+    public Map<String, List<String>> getMetadata() {
+        Map<String, List<String>> metadata = new HashMap<>();
+        metadata.put("branches", studentRepository.findDistinctBranches());
+        metadata.put("batches", studentRepository.findDistinctBatches());
+        return metadata;
     }
 
     public Student update(String studentId, StudentUpdateRequest request) {

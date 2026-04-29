@@ -13,9 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -33,14 +37,33 @@ public class StudentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(studentService.create(request));
     }
 
-    @GetMapping("/{studentId}")
-    public Student get(@PathVariable String studentId) {
-        return studentService.get(studentId);
+    @GetMapping("/paginated")
+    public Page<Student> getPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String branch,
+            @RequestParam(required = false) String batch,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        return studentService.getPaginatedStudents(search, branch, batch, status, PageRequest.of(page, size, sort));
+    }
+
+    @GetMapping("/metadata")
+    public Map<String, List<String>> getMetadata() {
+        return studentService.getMetadata();
     }
 
     @GetMapping
     public List<Student> getAll() {
         return studentService.getAll();
+    }
+    @GetMapping("/{studentId}")
+    public Student get(@PathVariable String studentId) {
+        return studentService.get(studentId);
     }
 
     @PutMapping("/{studentId}")
